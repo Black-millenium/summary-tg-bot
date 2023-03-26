@@ -12,7 +12,7 @@ app:
     token: ${GPT_TOKEN}
     organization: ${GPT_ORGANIZATION}
     temperature: ${GPT_TEMPERATURE:0.8}
-    max-tokens: ${GPT_MAX_TOKENS:0.8
+    max-tokens: ${GPT_MAX_TOKENS:250}
     model: ${GPT_MODEL:gpt-3.5-turbo}
     url: https://api.openai.com/v1/chat/completions
     max-batch-size: ${GPT_MAX_BATCH_SIZE:50}

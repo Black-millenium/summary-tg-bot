@@ -43,14 +43,24 @@ public class ChatGptService {
                     createGptInstruction(messagesConverted, GptRole.ASSISTANT, gptProperties.getAssistantInstruction());
 
                     ChatGptRequest chatGptRequest = createChatGptRequest(messagesConverted);
-                    ChatGptResponse body = restTemplate.postForEntity(
-                                    gptProperties.getUrl(), chatGptRequest, ChatGptResponse.class)
-                            .getBody();
 
-                    log.info("{}", body);
-                    sb.append(body != null && body.choices() != null && !body.choices().isEmpty()
-                            ? body.choices().get(0).message().content()
-                            : "Ошибка генерации саммари по блоку сообщений");
+                    ChatGptResponse body;
+                    try {
+                        body = restTemplate.postForEntity(
+                                        gptProperties.getUrl(), chatGptRequest, ChatGptResponse.class)
+                                .getBody();
+
+                        log.info("{}", body);
+
+                        if (body != null && body.choices() != null && !body.choices().isEmpty()) {
+                            sb.append(body.choices().get(0).message().content());
+                        } else {
+                            sb.append("Ошибка генерации саммари по блоку сообщений");
+                        }
+                    } catch (Exception e) {
+                        sb.append("Ошибка генерации саммари по блоку сообщений");
+                    }
+
                     sb.append("\n\n");
                 });
 

@@ -14,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.IntStream;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -24,35 +25,48 @@ public class ChatGptService {
     private final RestTemplate restTemplate;
 
     public String requestGptSummarization(List<ChatMessage> messages) {
-        final List<GptMessage> messagesConverted = new ArrayList<>();
+        final StringBuilder sb = new StringBuilder();
 
-        GptMessage systemMessage = new GptMessage(GptRole.SYSTEM, gptProperties.getSystemInstruction());
-        messagesConverted.add(systemMessage);
+        messages.sort(Comparator.comparing(ChatMessage::getCreatedAt));
+        int batchSize = gptProperties.getMaxBatchSize();
 
-        messages.stream()
-                .sorted(Comparator.comparing(ChatMessage::getCreatedAt))
-                .map(msg -> new GptMessage(GptRole.USER, msg.getSenderName() + ": " + msg.getMessage()))
-                .forEach(messagesConverted::add);
+        IntStream.iterate(0, i -> i < messages.size(), i -> i + batchSize)
+                .mapToObj(i -> messages.subList(i, Math.min(i + batchSize, messages.size())))
+                .forEachOrdered(chatMessages -> {
+                    final List<GptMessage> messagesConverted = new ArrayList<>();
+                    createGptInstruction(messagesConverted, GptRole.SYSTEM, gptProperties.getSystemInstruction());
 
-        GptMessage assistantMessage = new GptMessage(GptRole.ASSISTANT, gptProperties.getAssistantInstruction());
-        messagesConverted.add(assistantMessage);
+                    chatMessages.forEach(msg ->
+                            createGptInstruction(messagesConverted, GptRole.USER,
+                                    msg.getSenderName() + ": " + msg.getMessage()));
 
-        ChatGptRequest chatGptRequest = new ChatGptRequest(
+                    createGptInstruction(messagesConverted, GptRole.ASSISTANT, gptProperties.getAssistantInstruction());
+
+                    ChatGptRequest chatGptRequest = createChatGptRequest(messagesConverted);
+                    ChatGptResponse body = restTemplate.postForEntity(
+                                    gptProperties.getUrl(), chatGptRequest, ChatGptResponse.class)
+                            .getBody();
+
+                    log.info("{}", body);
+                    sb.append(body != null && body.choices() != null && !body.choices().isEmpty()
+                            ? body.choices().get(0).message().content()
+                            : "Ошибка генерации саммари по блоку сообщений");
+                    sb.append("\n\n");
+                });
+
+        return sb.toString();
+    }
+
+    private ChatGptRequest createChatGptRequest(List<GptMessage> messagesConverted) {
+        return new ChatGptRequest(
                 gptProperties.getModel(),
                 gptProperties.getMaxTokens(),
                 gptProperties.getTemperature(),
                 messagesConverted);
+    }
 
-        ChatGptResponse body = restTemplate.postForEntity(
-                        gptProperties.getUrl(), chatGptRequest, ChatGptResponse.class)
-                .getBody();
-
-        log.info("{}", body);
-
-        if (body != null && body.choices() != null && !body.choices().isEmpty()) {
-            return body.choices().get(0).message().content();
-        } else {
-            throw new RuntimeException("Error ChatGPT response");
-        }
+    private void createGptInstruction(List<GptMessage> messagesConverted, GptRole system, String systemInstruction) {
+        GptMessage systemMessage = new GptMessage(system, systemInstruction);
+        messagesConverted.add(systemMessage);
     }
 }

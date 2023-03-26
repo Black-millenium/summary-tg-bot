@@ -54,9 +54,11 @@ public class ChatGptService {
                     sb.append(body.choices().get(0).message().content());
                 } else {
                     sb.append("Ошибка генерации саммари по блоку сообщений");
+                    log.error("Response body: {}", body);
                 }
             } catch (Exception e) {
                 sb.append("Ошибка генерации саммари по блоку сообщений");
+                log.error(e.getMessage());
             }
 
             sb.append("\n\n");

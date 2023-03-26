@@ -6,18 +6,21 @@ import com.romaskull.summarytgbot.properties.TelegarmProperties;
 import com.romaskull.summarytgbot.repository.TelegramChatMessageRepository;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.EntityType;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.MessageEntity;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -54,7 +57,7 @@ public class TelegramBotSummaryService extends TelegramLongPollingBot {
         final Message message = update.getMessage();
         List<MessageEntity> entities;
 
-        if (message != null && !StringUtils.isBlank(message.getText())) {
+        if (message != null && StringUtils.hasLength(message.getText())) {
             Long chatId = message.getChatId();
 
             if (isGroupMessage(message) && (entities = message.getEntities()) != null) {
@@ -64,9 +67,10 @@ public class TelegramBotSummaryService extends TelegramLongPollingBot {
                         try {
                             int messageCount = Integer.parseInt(messageText);
 
-                            if (messageCount > gptProperties.getMaxHistory()) {
-                                throw new RuntimeException("Значение максимального количества " +
-                                        "записей больше допустимого");
+                            if (messageCount > gptProperties.getMaxHistory() || messageCount < 1) {
+                                sendMessage(chatId, "Система не в состоянии понять введеное вами значение. " +
+                                        "Диапазон: [1; " + gptProperties.getMaxHistory() + "]");
+                                return;
                             }
 
                             List<ChatMessage> msgs = historyRepository.findLatestMessages(chatId, messageCount);
@@ -78,16 +82,16 @@ public class TelegramBotSummaryService extends TelegramLongPollingBot {
                                     "Введите только количество сообщений для краткого анализа.");
                         } catch (RuntimeException e) {
                             log.error("{}", e.getMessage(), e);
-                            sendMessage(chatId, e.getMessage());
+                            sendMessage(chatId, "Произошла внутренняя ошибка");
                         }
                     }
                 }
-            } else {
+            } else if (isGroupMessage(message)) {
                 final ChatMessage chatMessage = new ChatMessage();
 
                 chatMessage.setChatId(chatId);
                 chatMessage.setMessage(message.getText());
-                chatMessage.setSenderName(message.getFrom().getUserName());
+                chatMessage.setSenderName(getDisplayableName(message.getFrom()));
                 chatMessage.setSenderId(message.getFrom().getId());
                 chatMessage.setCreatedAt(LocalDateTime.now());
 
@@ -119,5 +123,23 @@ public class TelegramBotSummaryService extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
+    }
+
+    public String getDisplayableName(User from) {
+        List<String> result = new ArrayList<>();
+
+        if (!StringUtils.hasLength(from.getFirstName()) && !StringUtils.hasLength(from.getLastName())) {
+            result.add(from.getUserName());
+        } else {
+            if (StringUtils.hasLength(from.getFirstName())) {
+                result.add(from.getFirstName());
+            }
+
+            if (StringUtils.hasLength(from.getLastName())) {
+                result.add(from.getLastName());
+            }
+        }
+
+        return result.stream().collect(Collectors.joining(" ", "[", "]"));
     }
 }

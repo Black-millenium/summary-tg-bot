@@ -37,16 +37,22 @@ public class ChatGptService {
         GptMessage assistantMessage = new GptMessage(GptRole.ASSISTANT, gptProperties.getAssistantInstruction());
         messagesConverted.add(assistantMessage);
 
-        ChatGptRequest chatGptRequest = new ChatGptRequest(gptProperties.getModel(), messagesConverted);
+        ChatGptRequest chatGptRequest = new ChatGptRequest(
+                gptProperties.getModel(),
+                gptProperties.getMaxTokens(),
+                gptProperties.getTemperature(),
+                messagesConverted);
 
         ChatGptResponse body = restTemplate.postForEntity(
                         gptProperties.getUrl(), chatGptRequest, ChatGptResponse.class)
                 .getBody();
 
+        log.info("{}", body);
+
         if (body != null && body.choices() != null && !body.choices().isEmpty()) {
             return body.choices().get(0).message().content();
         } else {
-            throw new RuntimeException("Ошибка получения ответа от ChatGPT");
+            throw new RuntimeException("Error ChatGPT response");
         }
     }
 }

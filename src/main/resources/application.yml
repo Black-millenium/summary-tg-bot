@@ -11,14 +11,14 @@ app:
   gpt:
     token: ${GPT_TOKEN}
     organization: ${GPT_ORGANIZATION}
-    temperature: ${GPT_TEMPERATURE:0.8}
-    max-tokens: ${GPT_MAX_TOKENS:250}
+    temperature: ${GPT_TEMPERATURE:1.0}
+    max-tokens: ${GPT_MAX_TOKENS:300}
     model: ${GPT_MODEL:gpt-3.5-turbo}
     url: https://api.openai.com/v1/chat/completions
     max-batch-size: ${GPT_MAX_BATCH_SIZE:50}
     max-history: ${GPT_MAX_HISTORY:300}
     system-instruction: Анализ и краткий пересказ сообщений.
-    assistant-instruction: Кратко перескажи сообщения. Адаптируй нецензурную лексику и оскорбления в вежливый формат. Обращайся по никам.
+    assistant-instruction: Кратко перескажи сообщения. Адаптируй нецензурную лексику и оскорбления в вежливый формат. Обращайся по никам. Агрегируй сообщения по пользователям.
 
   telegram:
     username: ${TELEGRAM_USERNAME}

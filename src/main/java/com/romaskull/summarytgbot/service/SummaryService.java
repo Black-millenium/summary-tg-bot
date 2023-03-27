@@ -1,47 +1,53 @@
 package com.romaskull.summarytgbot.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.romaskull.summarytgbot.entity.ChatMessage;
 import com.romaskull.summarytgbot.properties.GptProperties;
 import com.romaskull.summarytgbot.properties.TelegarmProperties;
 import com.romaskull.summarytgbot.repository.TelegramChatMessageRepository;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.bots.TelegramWebhookBot;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.EntityType;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.MessageEntity;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static com.romaskull.summarytgbot.util.SummaryUtil.extractMessageText;
+import static com.romaskull.summarytgbot.util.SummaryUtil.getDisplayableName;
+import static com.romaskull.summarytgbot.util.SummaryUtil.isBotCalling;
+import static com.romaskull.summarytgbot.util.SummaryUtil.isGroupMessage;
 
 @Slf4j
 @Service
-public class TelegramBotSummaryService extends TelegramLongPollingBot {
-
-    private static final String SUMGPTBOT = "@sumgptbot";
+public class SummaryService extends TelegramWebhookBot {
 
     private final TelegarmProperties telegarmProperties;
     private final ChatGptService chatGptService;
     private final TelegramChatMessageRepository historyRepository;
     private final GptProperties gptProperties;
+    private final ObjectMapper mapper;
 
-    public TelegramBotSummaryService(TelegarmProperties telegarmProperties,
-                                     ChatGptService chatGptService,
-                                     TelegramChatMessageRepository historyRepository,
-                                     GptProperties gptProperties) {
+    public SummaryService(TelegarmProperties telegarmProperties,
+                          ChatGptService chatGptService,
+                          TelegramChatMessageRepository historyRepository,
+                          GptProperties gptProperties,
+                          ObjectMapper mapper) {
         super(telegarmProperties.getToken());
         this.telegarmProperties = telegarmProperties;
         this.chatGptService = chatGptService;
         this.historyRepository = historyRepository;
         this.gptProperties = gptProperties;
+        this.mapper = mapper;
 
         log.info("Summary service initialized");
     }
@@ -53,7 +59,7 @@ public class TelegramBotSummaryService extends TelegramLongPollingBot {
 
     @SneakyThrows
     @Override
-    public void onUpdateReceived(Update update) {
+    public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
         final Message message = update.getMessage();
         List<MessageEntity> entities;
 
@@ -70,10 +76,13 @@ public class TelegramBotSummaryService extends TelegramLongPollingBot {
                             if (messageCount > gptProperties.getMaxHistory() || messageCount < 1) {
                                 sendMessage(chatId, "Система не в состоянии понять введеное вами значение. " +
                                         "Диапазон: [1; " + gptProperties.getMaxHistory() + "]");
-                                return;
+                                continue;
                             }
 
-                            List<ChatMessage> msgs = historyRepository.findLatestMessages(chatId, messageCount);
+                            List<ChatMessage> msgs = new ArrayList<>(
+                                    historyRepository.findByChatIdOrderByMessageIdDesc(chatId,
+                                            PageRequest.of(0, gptProperties.getMaxHistory())));
+
                             String summaryResult = chatGptService.requestGptSummarization(msgs);
 
                             sendMessage(chatId, summaryResult);
@@ -90,6 +99,7 @@ public class TelegramBotSummaryService extends TelegramLongPollingBot {
                 final ChatMessage chatMessage = new ChatMessage();
 
                 chatMessage.setChatId(chatId);
+                chatMessage.setMessageId(Long.valueOf(message.getMessageId()));
                 chatMessage.setMessage(message.getText());
                 chatMessage.setSenderName(getDisplayableName(message.getFrom()));
                 chatMessage.setSenderId(message.getFrom().getId());
@@ -98,20 +108,8 @@ public class TelegramBotSummaryService extends TelegramLongPollingBot {
                 historyRepository.save(chatMessage);
             }
         }
-    }
 
-    private boolean isGroupMessage(Message message) {
-        return message.isGroupMessage() || message.isSuperGroupMessage();
-    }
-
-    private String extractMessageText(Message message) {
-        return message.getText().replace(SUMGPTBOT, "").strip();
-    }
-
-    private boolean isBotCalling(Message message, MessageEntity entity) {
-        return EntityType.MENTION.equals(entity.getType())
-                && SUMGPTBOT.equals(entity.getText())
-                && message.getText().startsWith(SUMGPTBOT);
+        return null;
     }
 
     private void sendMessage(Long chatId, String text) {
@@ -125,21 +123,8 @@ public class TelegramBotSummaryService extends TelegramLongPollingBot {
         }
     }
 
-    public String getDisplayableName(User from) {
-        List<String> result = new ArrayList<>();
-
-        if (!StringUtils.hasLength(from.getFirstName()) && !StringUtils.hasLength(from.getLastName())) {
-            result.add(from.getUserName());
-        } else {
-            if (StringUtils.hasLength(from.getFirstName())) {
-                result.add(from.getFirstName());
-            }
-
-            if (StringUtils.hasLength(from.getLastName())) {
-                result.add(from.getLastName());
-            }
-        }
-
-        return result.stream().collect(Collectors.joining(" ", "[", "]"));
+    @Override
+    public String getBotPath() {
+        return telegarmProperties.getUsername();
     }
 }

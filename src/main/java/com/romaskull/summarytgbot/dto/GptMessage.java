@@ -1,4 +1,9 @@
 package com.romaskull.summarytgbot.dto;
 
-public record GptMessage(GptRole role, String content) {
+import lombok.Value;
+
+@Value
+public class GptMessage {
+    GptRole role;
+    String content;
 }

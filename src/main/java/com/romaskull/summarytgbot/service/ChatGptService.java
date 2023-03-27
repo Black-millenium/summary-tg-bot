@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import static com.romaskull.summarytgbot.util.GptUtil.createGptInstruction;
+
 @Slf4j
 @RequiredArgsConstructor
 @Service
@@ -50,8 +52,8 @@ public class ChatGptService {
 
                 log.info("{}", body);
 
-                if (body != null && body.choices() != null && !body.choices().isEmpty()) {
-                    sb.append(body.choices().get(0).message().content());
+                if (body != null && body.getChoices() != null && !body.getChoices().isEmpty()) {
+                    sb.append(body.getChoices().get(0).getMessage().getContent());
                 } else {
                     sb.append("Ошибка генерации саммари по блоку сообщений");
                     log.error("Response body: {}", body);
@@ -73,10 +75,5 @@ public class ChatGptService {
                 gptProperties.getMaxTokens(),
                 gptProperties.getTemperature(),
                 messagesConverted);
-    }
-
-    private void createGptInstruction(List<GptMessage> messagesConverted, GptRole system, String systemInstruction) {
-        GptMessage systemMessage = new GptMessage(system, systemInstruction);
-        messagesConverted.add(systemMessage);
     }
 }

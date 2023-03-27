@@ -1,13 +1,16 @@
 package com.romaskull.summarytgbot.repository;
 
 import com.romaskull.summarytgbot.entity.ChatMessage;
-import org.springframework.data.jdbc.repository.query.Query;
-import org.springframework.data.repository.CrudRepository;
+import com.romaskull.summarytgbot.entity.PrimaryKey;
+import org.socialsignin.spring.data.dynamodb.repository.EnableScan;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.PagingAndSortingRepository;
 
 import java.util.List;
 
-public interface TelegramChatMessageRepository extends CrudRepository<ChatMessage, Long> {
+@EnableScan
+public interface TelegramChatMessageRepository extends PagingAndSortingRepository<ChatMessage, PrimaryKey> {
 
-    @Query("SELECT * FROM telegram_chat_messages WHERE chat_id = :chatId ORDER BY created_at DESC LIMIT :limit")
-    List<ChatMessage> findLatestMessages(Long chatId, int limit);
+
+    List<ChatMessage> findByChatIdOrderByMessageIdDesc(Long chatId, Pageable pageable);
 }

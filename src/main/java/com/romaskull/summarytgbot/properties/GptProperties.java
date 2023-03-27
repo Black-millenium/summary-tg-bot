@@ -1,9 +1,9 @@
 package com.romaskull.summarytgbot.properties;
 
-import lombok.Value;
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@Value
+@Data
 @ConfigurationProperties(prefix = "app.gpt")
 public class GptProperties {
     String token;

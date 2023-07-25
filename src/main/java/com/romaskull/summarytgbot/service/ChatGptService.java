@@ -5,15 +5,22 @@ import com.romaskull.summarytgbot.dto.ChatGptResponse;
 import com.romaskull.summarytgbot.dto.GptMessage;
 import com.romaskull.summarytgbot.dto.GptRole;
 import com.romaskull.summarytgbot.entity.ChatMessage;
+import com.romaskull.summarytgbot.entity.Dialogue;
 import com.romaskull.summarytgbot.properties.GptProperties;
+import com.romaskull.summarytgbot.repository.DialogueRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+import static com.romaskull.summarytgbot.util.GptUtil.createChatGptRequest;
+import static com.romaskull.summarytgbot.util.GptUtil.createGptInstruction;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -22,31 +29,81 @@ public class ChatGptService {
 
     private final GptProperties gptProperties;
     private final RestTemplate restTemplate;
+    private final DialogueRepository dialogueRepository;
 
-    public String requestGptSummarization(List<ChatMessage> messages) {
-        final List<GptMessage> messagesConverted = new ArrayList<>();
+    @Async
+    public CompletableFuture<String> gptDialogue(List<Dialogue> dialogue) {
+        final CompletableFuture<String> future = new CompletableFuture<>();
+        final List<GptMessage> dialogueHistory = new ArrayList<>();
 
-        GptMessage systemMessage = new GptMessage(GptRole.SYSTEM, gptProperties.getSystemInstruction());
-        messagesConverted.add(systemMessage);
+        dialogue.sort(Comparator.comparing(Dialogue::getCreatedAt));
 
-        messages.stream()
-                .sorted(Comparator.comparing(ChatMessage::getCreatedAt))
-                .map(msg -> new GptMessage(GptRole.USER, msg.getSenderName() + ": " + msg.getMessage()))
-                .forEach(messagesConverted::add);
+        createGptInstruction(dialogueHistory,
+                GptRole.SYSTEM,
+                "Ты ведешь диалог как обычный собеседник. Разговаривай на ты. Не упоминай, что ты ИИ.");
 
-        GptMessage assistantMessage = new GptMessage(GptRole.ASSISTANT, gptProperties.getAssistantInstruction());
-        messagesConverted.add(assistantMessage);
+        dialogue.forEach(message -> createGptInstruction(dialogueHistory, message.getGptRole(), message.getMessage()));
 
-        ChatGptRequest chatGptRequest = new ChatGptRequest(gptProperties.getModel(), messagesConverted);
+        try {
+            future.complete(getGptResponse(dialogueHistory));
+        } catch (Exception e) {
+            future.complete("Извини, я не могу сейчас ответить. Плохо себя чувствую.");
+            log.error("{}", e.getMessage(), e);
+        }
 
-        ChatGptResponse body = restTemplate.postForEntity(
-                        gptProperties.getUrl(), chatGptRequest, ChatGptResponse.class)
-                .getBody();
+        return future;
+    }
+
+    @Async
+    public CompletableFuture<String> requestGptSummarization(List<ChatMessage> messages) {
+        final CompletableFuture<String> result = new CompletableFuture<>();
+        final StringBuilder sb = new StringBuilder();
+
+        messages.sort(Comparator.comparing(ChatMessage::getCreatedAt));
+        int batchSize = gptProperties.getMaxBatchSize();
+
+        for (int i = 0, counter = 1; i < messages.size(); i += batchSize, counter++) {
+            List<ChatMessage> chatMessages = messages.subList(i, Math.min(i + batchSize, messages.size()));
+            log.info("Total Messages: {}. Batch number: {}, batch size: {}",
+                messages.size(), counter, chatMessages.size());
+
+            final List<GptMessage> messagesConverted = new ArrayList<>();
+            createGptInstruction(messagesConverted, GptRole.SYSTEM, gptProperties.getSystemInstruction());
+
+            chatMessages.forEach(msg -> createGptInstruction(messagesConverted, GptRole.USER,
+                msg.getSenderName() + ": " + msg.getMessage()));
+
+            createGptInstruction(messagesConverted, GptRole.USER,
+                "Перескажи содержимое диалога, но не очень подробно. Нецензурная лексика разрешена.");
+
+            try {
+                sb.append(getGptResponse(messagesConverted));
+            } catch (Exception e) {
+                sb.append("Ошибка генерации саммари по блоку сообщений");
+                log.error(e.getMessage());
+            }
+
+            sb.append("\n\n");
+        }
+
+        result.complete(sb.toString());
+        return result;
+    }
+
+    private String getGptResponse(List<GptMessage> messages) {
+        ChatGptResponse body = executeGptRequest(messages);
+        log.info("{}", body);
 
         if (body != null && body.choices() != null && !body.choices().isEmpty()) {
             return body.choices().get(0).message().content();
         } else {
-            throw new RuntimeException("Ошибка получения ответа от ChatGPT");
+            log.error("Response body: {}", body);
+            return "Ошибка получения ответа от внешнего API";
         }
+    }
+
+    private ChatGptResponse executeGptRequest(List<GptMessage> messages) {
+        ChatGptRequest request = createChatGptRequest(messages, gptProperties);
+        return restTemplate.postForEntity(gptProperties.getUrl(), request, ChatGptResponse.class).getBody();
     }
 }

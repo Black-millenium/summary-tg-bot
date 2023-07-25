@@ -1,23 +1,51 @@
+server:
+  port: 8443
+  ssl:
+    key-store: ${SSL_KEY_STORE_PATH}
+    key-store-password: ${SSL_KEY_STORE_PASSWORD}
+    key-store-type: ${SSL_KEY_STORE_TYPE}
+    key-alias: ${SSL_KEY_ALIAS}
+    key-password: ${SSL_KEY_PASSWORD}
+
 spring:
-  datasource:
-    url: jdbc:h2:file:./summary-bot
-  flyway:
-    validate-migration-naming: true
+  data:
+    mongodb:
+      uri: ${MONGO_CONNECTION_STRING}
+      database: ${MONGO_DATABASE_NAME}
+      auto-index-creation: true
   output:
     ansi:
       enabled: always
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration
 
 app:
   gpt:
     token: ${GPT_TOKEN}
     organization: ${GPT_ORGANIZATION}
-    temperature: ${GPT_TEMPERATURE:0.8}
-    model: ${GPT_MODEL:gpt-3.5-turbo}
+    temperature: ${GPT_TEMPERATURE:1.0}
+    max-tokens: ${GPT_MAX_TOKENS:300}
+    model: ${GPT_MODEL:gpt-3.5-turbo-16k}
     url: https://api.openai.com/v1/chat/completions
-    max-history: ${GPT_MAX_HISTORY:50}
-    system-instruction: Анализ и краткий пересказ сообщений.
-    assistant-instruction: Кратко перескажи сообщения. Адаптируй нецензурную лексику и оскорбления в вежливый формат. Минимум лишних сообщений в стиле "пользователь с нимнеймом...". Обращайся по никам.
+    max-batch-size: ${GPT_MAX_BATCH_SIZE:50}
+    max-history: ${GPT_MAX_HISTORY:300}
+    system-instruction: ${GPT_SYSTEM_INSTRUCTION}
 
-  telegram:
+  summary-bot:
     username: ${TELEGRAM_USERNAME}
     token: ${TELEGRAM_TOKEN}
+    bot-path: ${TELEGRAM_BOT_PATH}
+    secret-token: ${TELEGRAM_SECRET_TOKEN}
+    accept-message: ${TELEGRAM_ACCEPT_MESSAGE}
+
+  dialogue-bot:
+    username: ${DIALOGUE_TELEGRAM_USERNAME}
+    token: ${DIALOGUE_TELEGRAM_TOKEN}
+    bot-path: ${DIALOGUE_TELEGRAM_BOT_PATH}
+    secret-token: ${DIALOGUE_TELEGRAM_SECRET_TOKEN}
+    accept-message: ${DIALOGUE_TELEGRAM_ACCEPT_MESSAGE}
+
+logging:
+  level:
+    org.springframework.data.mongodb.core.MongoTemplate: DEBUG

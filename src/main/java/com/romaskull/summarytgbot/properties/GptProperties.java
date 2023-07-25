@@ -9,9 +9,10 @@ public class GptProperties {
     String token;
     String organization;
     double temperature;
+    int maxBatchSize;
+    int maxHistory;
+    int maxTokens;
     String model;
     String url;
-    int maxHistory;
     String systemInstruction;
-    String assistantInstruction;
 }

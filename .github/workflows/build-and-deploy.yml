@@ -29,7 +29,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ env.DOCKERHUB_LOGIN }}
+          username: ${{ vars.DOCKERHUB_LOGIN }}
           password: ${{ secrets.DOCKERHUB_PUSH_TOKEN }}
 
       - name: Build and push
@@ -41,19 +41,19 @@ jobs:
           # cache-from: type=gha
           # cache-to: type=gha,mode=max
           push: true
-          tags: ${{ env.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}
+          tags: ${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}
 
       - name: Decode and create ECDSA cert for server auth
         run: |
           echo "${{ secrets.SERVER_ECDSA_CERT_BASE64 }}" | base64 -d > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ env.SERVER_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${{ vars.SERVER_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Deploy latest image using podman on remote server
         run: |
-          SSH_CMD="ssh -i ~/.ssh/id_ed25519 ${{ secrets.SERVER_LOGIN }}@${{ env.SERVER_HOST }}"
-          $SSH_CMD "echo '${{ secrets.DOCKERHUB_PULL_TOKEN }}' | podman login -u ${{ env.DOCKERHUB_LOGIN }} --password-stdin docker.io"
-          $SSH_CMD "podman pull ${{ env.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"
+          SSH_CMD="ssh -i ~/.ssh/id_ed25519 ${{ secrets.SERVER_LOGIN }}@${{ vars.SERVER_HOST }}"
+          $SSH_CMD "echo '${{ secrets.DOCKERHUB_PULL_TOKEN }}' | podman login -u ${{ vars.DOCKERHUB_LOGIN }} --password-stdin docker.io"
+          $SSH_CMD "podman pull ${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"
 
           $SSH_CMD "podman stop summary-tg-bot || true"
           $SSH_CMD "podman rm summary-tg-bot || true"
@@ -63,28 +63,28 @@ jobs:
             -p 8443:8443 \
             -e GPT_TOKEN=${{ secrets.GPT_TOKEN }} \
             -e GPT_ORGANIZATION=${{ secrets.GPT_ORGANIZATION }} \
-            -e TELEGRAM_USERNAME=${{ env.TELEGRAM_USERNAME }} \
+            -e TELEGRAM_USERNAME=${{ vars.TELEGRAM_USERNAME }} \
             -e TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }} \
-            -e GPT_TEMPERATURE=${{ env.GPT_TEMPERATURE }} \
-            -e GPT_MAX_BATCH_SIZE=${{ env.GPT_MAX_BATCH_SIZE }} \
-            -e GPT_MAX_TOKENS=${{ env.GPT_MAX_TOKENS }} \
-            -e GPT_MAX_HISTORY=${{ env.GPT_MAX_HISTORY }} \
-            -e GPT_MODEL=${{ env.GPT_MODEL }} \
+            -e GPT_TEMPERATURE=${{ vars.GPT_TEMPERATURE }} \
+            -e GPT_MAX_BATCH_SIZE=${{ vars.GPT_MAX_BATCH_SIZE }} \
+            -e GPT_MAX_TOKENS=${{ vars.GPT_MAX_TOKENS }} \
+            -e GPT_MAX_HISTORY=${{ vars.GPT_MAX_HISTORY }} \
+            -e GPT_MODEL=${{ vars.GPT_MODEL }} \
             -e MONGO_CONNECTION_STRING=${{ secrets.MONGO_CONNECTION_STRING }} \
-            -e MONGO_DATABASE_NAME=${{ env.MONGO_DATABASE_NAME }} \
+            -e MONGO_DATABASE_NAME=${{ vars.MONGO_DATABASE_NAME }} \
             -e TELEGRAM_BOT_PATH=${{ secrets.TELEGRAM_BOT_PATH }} \
             -e TELEGRAM_SECRET_TOKEN=${{ secrets.TELEGRAM_SECRET_TOKEN }} \
-            -e SSL_KEY_STORE_PATH=${{ env.SSL_KEY_STORE_PATH }} \
+            -e SSL_KEY_STORE_PATH=${{ vars.SSL_KEY_STORE_PATH }} \
             -e SSL_KEY_STORE_PASSWORD=${{ secrets.SSL_KEY_STORE_PASSWORD }} \
-            -e SSL_KEY_STORE_TYPE=${{ env.SSL_KEY_STORE_TYPE }} \
-            -e SSL_KEY_ALIAS=${{ env.SSL_KEY_ALIAS }} \
+            -e SSL_KEY_STORE_TYPE=${{ vars.SSL_KEY_STORE_TYPE }} \
+            -e SSL_KEY_ALIAS=${{ vars.SSL_KEY_ALIAS }} \
             -e SSL_KEY_PASSWORD=${{ secrets.SSL_KEY_PASSWORD }} \
-            -e GPT_SYSTEM_INSTRUCTION=${{ env.GPT_SYSTEM_INSTRUCTION }} \
-            -e GPT_ASSISTANT_INSTRUCTION=${{ env.GPT_ASSISTANT_INSTRUCTION }} \
-            -e TELEGRAM_ACCEPT_MESSAGE=${{ env.TELEGRAM_ACCEPT_MESSAGE }} \
-            -e ASK_TELEGRAM_USERNAME=${{ env.ASK_TELEGRAM_USERNAME }} \
+            -e GPT_SYSTEM_INSTRUCTION=${{ vars.GPT_SYSTEM_INSTRUCTION }} \
+            -e GPT_ASSISTANT_INSTRUCTION=${{ vars.GPT_ASSISTANT_INSTRUCTION }} \
+            -e TELEGRAM_ACCEPT_MESSAGE=${{ vars.TELEGRAM_ACCEPT_MESSAGE }} \
+            -e ASK_TELEGRAM_USERNAME=${{ vars.ASK_TELEGRAM_USERNAME }} \
             -e ASK_TELEGRAM_TOKEN=${{ secrets.ASK_TELEGRAM_TOKEN }} \
             -e ASK_TELEGRAM_BOT_PATH=${{ secrets.ASK_TELEGRAM_BOT_PATH }} \
             -e ASK_TELEGRAM_SECRET_TOKEN=${{ secrets.ASK_TELEGRAM_SECRET_TOKEN }} \
-            -e ASK_TELEGRAM_ACCEPT_MESSAGE=${{ env.ASK_TELEGRAM_ACCEPT_MESSAGE }} \
+            -e ASK_TELEGRAM_ACCEPT_MESSAGE=${{ vars.ASK_TELEGRAM_ACCEPT_MESSAGE }} \
             ${{ secrets.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"

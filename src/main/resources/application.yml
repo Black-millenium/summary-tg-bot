@@ -24,12 +24,12 @@ app:
   gpt:
     token: ${GPT_TOKEN}
     organization: ${GPT_ORGANIZATION}
-    temperature: ${GPT_TEMPERATURE:1.0}
-    max-tokens: ${GPT_MAX_TOKENS:300}
-    model: ${GPT_MODEL:gpt-3.5-turbo-16k}
+    temperature: ${GPT_TEMPERATURE}
+    max-tokens: ${GPT_MAX_TOKENS}
+    model: ${GPT_MODEL}
     url: https://api.openai.com/v1/chat/completions
-    max-batch-size: ${GPT_MAX_BATCH_SIZE:50}
-    max-history: ${GPT_MAX_HISTORY:300}
+    max-batch-size: ${GPT_MAX_BATCH_SIZE}
+    max-history: ${GPT_MAX_HISTORY}
     system-instruction: ${GPT_SYSTEM_INSTRUCTION}
 
   summary-bot:

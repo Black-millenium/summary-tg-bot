@@ -1,6 +1,7 @@
 name: Build and deploy docker image
 
 on:
+  workflow_dispatch:
   create:
     tags:
       - v*
@@ -15,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Decode and Create p12 File
+      - name: Decode and create p12 File
         run: echo "${{ secrets.BOT_PRIVATE_KEY_BASE64 }}" | base64 -d > cert/keystore.p12
 
       - name: Get the version from tag
@@ -28,8 +29,8 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_LOGIN }}
-          password: ${{ secrets.DOCKERHUB_PULL_TOKEN }}
+          username: ${{ env.DOCKERHUB_LOGIN }}
+          password: ${{ secrets.DOCKERHUB_PUSH_TOKEN }}
 
       - name: Build and push
         uses: docker/build-push-action@v4
@@ -40,4 +41,50 @@ jobs:
           # cache-from: type=gha
           # cache-to: type=gha,mode=max
           push: true
-          tags: ${{ secrets.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}
+          tags: ${{ env.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}
+
+      - name: Decode and create ECDSA cert for server auth
+        run: |
+          echo "${{ secrets.SERVER_ECDSA_CERT_BASE64 }}" | base64 -d > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ env.SERVER_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy latest image using podman on remote server
+        run: |
+          SSH_CMD="ssh -i ~/.ssh/id_ed25519 ${{ secrets.SERVER_LOGIN }}@${{ env.SERVER_HOST }}"
+          $SSH_CMD "echo '${{ secrets.DOCKERHUB_PULL_TOKEN }}' | podman login -u ${{ env.DOCKERHUB_LOGIN }} --password-stdin docker.io"
+          $SSH_CMD "podman pull ${{ env.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"
+
+          $SSH_CMD "podman stop summary-tg-bot || true"
+          $SSH_CMD "podman rm summary-tg-bot || true"
+
+          $SSH_CMD "podman run -d \
+            --name summary-tg-bot \
+            -p 8443:8443 \
+            -e GPT_TOKEN=${{ secrets.GPT_TOKEN }} \
+            -e GPT_ORGANIZATION=${{ secrets.GPT_ORGANIZATION }} \
+            -e TELEGRAM_USERNAME=${{ env.TELEGRAM_USERNAME }} \
+            -e TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }} \
+            -e GPT_TEMPERATURE=${{ env.GPT_TEMPERATURE }} \
+            -e GPT_MAX_BATCH_SIZE=${{ env.GPT_MAX_BATCH_SIZE }} \
+            -e GPT_MAX_TOKENS=${{ env.GPT_MAX_TOKENS }} \
+            -e GPT_MAX_HISTORY=${{ env.GPT_MAX_HISTORY }} \
+            -e GPT_MODEL=${{ env.GPT_MODEL }} \
+            -e MONGO_CONNECTION_STRING=${{ secrets. }} \
+            -e MONGO_DATABASE_NAME=${{ secrets.MONGO_CONNECTION_STRING }} \
+            -e TELEGRAM_BOT_PATH=${{ secrets.TELEGRAM_BOT_PATH }} \
+            -e TELEGRAM_SECRET_TOKEN=${{ secrets.TELEGRAM_SECRET_TOKEN }} \
+            -e SSL_KEY_STORE_PATH=${{ env.SSL_KEY_STORE_PATH }} \
+            -e SSL_KEY_STORE_PASSWORD=${{ secrets.SSL_KEY_STORE_PASSWORD }} \
+            -e SSL_KEY_STORE_TYPE=${{ env.SSL_KEY_STORE_TYPE }} \
+            -e SSL_KEY_ALIAS=${{ env.SSL_KEY_ALIAS }} \
+            -e SSL_KEY_PASSWORD=${{ secrets.SSL_KEY_PASSWORD }} \
+            -e GPT_SYSTEM_INSTRUCTION=${{ env.GPT_SYSTEM_INSTRUCTION }} \
+            -e GPT_ASSISTANT_INSTRUCTION=${{ env.GPT_ASSISTANT_INSTRUCTION }} \
+            -e TELEGRAM_ACCEPT_MESSAGE=${{ env.TELEGRAM_ACCEPT_MESSAGE }} \
+            -e ASK_TELEGRAM_USERNAME=${{ env.ASK_TELEGRAM_USERNAME }} \
+            -e ASK_TELEGRAM_TOKEN=${{ secrets.ASK_TELEGRAM_TOKEN }} \
+            -e ASK_TELEGRAM_BOT_PATH=${{ secrets.ASK_TELEGRAM_BOT_PATH }} \
+            -e ASK_TELEGRAM_SECRET_TOKEN=${{ secrets.ASK_TELEGRAM_SECRET_TOKEN }} \
+            -e ASK_TELEGRAM_ACCEPT_MESSAGE=${{ env.ASK_TELEGRAM_ACCEPT_MESSAGE }} \
+            ${{ secrets.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"

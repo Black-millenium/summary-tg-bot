@@ -36,7 +36,8 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Отключил кеш пока не разберусь, как он работает
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
           push: true
           tags: ${{ secrets.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}

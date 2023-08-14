@@ -11,10 +11,18 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Decode and Create p12 File
         run: echo "${{ secrets.BOT_PRIVATE_KEY_BASE64 }}" | base64 -d > cert/keystore.p12
 
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag summary-tg-bot:$(date +%s)
+        run: docker build . --file Dockerfile --tag summary-tg-bot:latest
+
+      - name: Login to Docker Hub using token
+        run: echo "${{ secrets.DOCKERHUB_PULL_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_LOGIN }}" --password-stdin
+
+      - name: Push Docker image to Docker Hub
+        run: |
+          docker tag summary-tg-bot:latest ${{ secrets.DOCKERHUB_LOGIN }}/summary-tg-bot:latest
+          docker push ${{ secrets.DOCKERHUB_LOGIN }}/summary-tg-bot:latest

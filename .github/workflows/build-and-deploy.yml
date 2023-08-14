@@ -1,0 +1,20 @@
+name: Build and deploy docker image
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Decode and Create p12 File
+        run: echo "${{ secrets.BOT_PRIVATE_KEY_BASE64 }}" | base64 -d > cert/keystore.p12
+
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag summary-tg-bot:$(date +%s)

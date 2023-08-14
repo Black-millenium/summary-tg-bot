@@ -61,31 +61,32 @@ jobs:
 
           $SSH_CMD "podman run -d \
           --name summary-tg-bot \
-          -p 8443:8443 \
-          -e GPT_TOKEN=${{ secrets.GPT_TOKEN }} \
-          -e GPT_ORGANIZATION=${{ secrets.GPT_ORGANIZATION }} \
-          -e TELEGRAM_USERNAME=${{ vars.TELEGRAM_USERNAME }} \
-          -e TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }} \
-          -e GPT_TEMPERATURE=${{ vars.GPT_TEMPERATURE }} \
-          -e GPT_MAX_BATCH_SIZE=${{ vars.GPT_MAX_BATCH_SIZE }} \
-          -e GPT_MAX_TOKENS=${{ vars.GPT_MAX_TOKENS }} \
-          -e GPT_MAX_HISTORY=${{ vars.GPT_MAX_HISTORY }} \
-          -e GPT_MODEL=${{ vars.GPT_MODEL }} \
-          -e MONGO_CONNECTION_STRING=${{ secrets.MONGO_CONNECTION_STRING }} \
-          -e MONGO_DATABASE_NAME=${{ vars.MONGO_DATABASE_NAME }} \
-          -e TELEGRAM_BOT_PATH=${{ secrets.TELEGRAM_BOT_PATH }} \
-          -e TELEGRAM_SECRET_TOKEN=${{ secrets.TELEGRAM_SECRET_TOKEN }} \
-          -e SSL_KEY_STORE_PATH=${{ vars.SSL_KEY_STORE_PATH }} \
-          -e SSL_KEY_STORE_PASSWORD=${{ secrets.SSL_KEY_STORE_PASSWORD }} \
-          -e SSL_KEY_STORE_TYPE=${{ vars.SSL_KEY_STORE_TYPE }} \
-          -e SSL_KEY_ALIAS=${{ vars.SSL_KEY_ALIAS }} \
-          -e SSL_KEY_PASSWORD=${{ secrets.SSL_KEY_PASSWORD }} \
-          -e GPT_SYSTEM_INSTRUCTION=${{ vars.GPT_SYSTEM_INSTRUCTION }} \
-          -e GPT_ASSISTANT_INSTRUCTION=${{ vars.GPT_ASSISTANT_INSTRUCTION }} \
-          -e TELEGRAM_ACCEPT_MESSAGE=${{ vars.TELEGRAM_ACCEPT_MESSAGE }} \
-          -e ASK_TELEGRAM_USERNAME=${{ vars.ASK_TELEGRAM_USERNAME }} \
-          -e ASK_TELEGRAM_TOKEN=${{ secrets.ASK_TELEGRAM_TOKEN }} \
-          -e ASK_TELEGRAM_BOT_PATH=${{ secrets.ASK_TELEGRAM_BOT_PATH }} \
-          -e ASK_TELEGRAM_SECRET_TOKEN=${{ secrets.ASK_TELEGRAM_SECRET_TOKEN }} \
-          -e ASK_TELEGRAM_ACCEPT_MESSAGE=${{ vars.ASK_TELEGRAM_ACCEPT_MESSAGE }} \
+          -p '8443:8443' \
+          -e GPT_TOKEN='${{ secrets.GPT_TOKEN }}' \
+          -e GPT_ORGANIZATION='${{ secrets.GPT_ORGANIZATION }}' \
+          -e TELEGRAM_USERNAME='${{ vars.TELEGRAM_USERNAME }}' \
+          -e TELEGRAM_TOKEN='${{ secrets.TELEGRAM_TOKEN }}' \
+          -e GPT_TEMPERATURE='${{ vars.GPT_TEMPERATURE }}' \
+          -e GPT_MAX_BATCH_SIZE='${{ vars.GPT_MAX_BATCH_SIZE }}' \
+          -e GPT_MAX_TOKENS='${{ vars.GPT_MAX_TOKENS }}' \
+          -e GPT_MAX_HISTORY='${{ vars.GPT_MAX_HISTORY }}' \
+          -e GPT_MODEL='${{ vars.GPT_MODEL }}' \
+          -e MONGO_CONNECTION_STRING='${{ secrets.MONGO_CONNECTION_STRING }}' \
+          -e MONGO_DATABASE_NAME='${{ vars.MONGO_DATABASE_NAME }}' \
+          -e TELEGRAM_BOT_PATH='${{ secrets.TELEGRAM_BOT_PATH }}' \
+          -e TELEGRAM_SECRET_TOKEN='${{ secrets.TELEGRAM_SECRET_TOKEN }}' \
+          -e SSL_KEY_STORE_PATH='${{ vars.SSL_KEY_STORE_PATH }}' \
+          -e SSL_KEY_STORE_PASSWORD='${{ secrets.SSL_KEY_STORE_PASSWORD }}' \
+          -e SSL_KEY_STORE_TYPE='${{ vars.SSL_KEY_STORE_TYPE }}' \
+          -e SSL_KEY_ALIAS='${{ vars.SSL_KEY_ALIAS }}' \
+          -e SSL_KEY_PASSWORD='${{ secrets.SSL_KEY_PASSWORD }}' \
+          -e GPT_SYSTEM_INSTRUCTION='${{ vars.GPT_SYSTEM_INSTRUCTION }}' \
+          -e GPT_ASSISTANT_INSTRUCTION='${{ vars.GPT_ASSISTANT_INSTRUCTION }}' \
+          -e TELEGRAM_ACCEPT_MESSAGE='${{ vars.TELEGRAM_ACCEPT_MESSAGE }}' \
+          -e ASK_TELEGRAM_USERNAME='${{ vars.ASK_TELEGRAM_USERNAME }}' \
+          -e ASK_TELEGRAM_TOKEN='${{ secrets.ASK_TELEGRAM_TOKEN }}' \
+          -e ASK_TELEGRAM_BOT_PATH='${{ secrets.ASK_TELEGRAM_BOT_PATH }}' \
+          -e ASK_TELEGRAM_SECRET_TOKEN='${{ secrets.ASK_TELEGRAM_SECRET_TOKEN }}' \
+          -e ASK_TELEGRAM_ACCEPT_MESSAGE='${{ vars.ASK_TELEGRAM_ACCEPT_MESSAGE }}' \
           ${{ vars.DOCKERHUB_HOST }}/${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"
+

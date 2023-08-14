@@ -70,8 +70,8 @@ jobs:
             -e GPT_MAX_TOKENS=${{ env.GPT_MAX_TOKENS }} \
             -e GPT_MAX_HISTORY=${{ env.GPT_MAX_HISTORY }} \
             -e GPT_MODEL=${{ env.GPT_MODEL }} \
-            -e MONGO_CONNECTION_STRING=${{ secrets. }} \
-            -e MONGO_DATABASE_NAME=${{ secrets.MONGO_CONNECTION_STRING }} \
+            -e MONGO_CONNECTION_STRING=${{ secrets.MONGO_CONNECTION_STRING }} \
+            -e MONGO_DATABASE_NAME=${{ env.MONGO_DATABASE_NAME }} \
             -e TELEGRAM_BOT_PATH=${{ secrets.TELEGRAM_BOT_PATH }} \
             -e TELEGRAM_SECRET_TOKEN=${{ secrets.TELEGRAM_SECRET_TOKEN }} \
             -e SSL_KEY_STORE_PATH=${{ env.SSL_KEY_STORE_PATH }} \

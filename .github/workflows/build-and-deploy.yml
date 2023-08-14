@@ -54,7 +54,7 @@ jobs:
         run: |
           SSH_CMD="ssh -i ~/.ssh/id_ed25519 ${{ secrets.SERVER_LOGIN }}@${{ vars.SERVER_HOST }}"
           $SSH_CMD "echo '${{ secrets.DOCKERHUB_PULL_TOKEN }}' | podman login -u ${{ vars.DOCKERHUB_LOGIN }} --password-stdin docker.io"
-          $SSH_CMD "podman pull ${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"
+          $SSH_CMD "podman pull ${{ vars.DOCKERHUB_HOST }}/${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"
 
           $SSH_CMD "podman stop summary-tg-bot || true"
           $SSH_CMD "podman rm summary-tg-bot || true"
@@ -88,4 +88,4 @@ jobs:
             -e ASK_TELEGRAM_BOT_PATH=${{ secrets.ASK_TELEGRAM_BOT_PATH }} \
             -e ASK_TELEGRAM_SECRET_TOKEN=${{ secrets.ASK_TELEGRAM_SECRET_TOKEN }} \
             -e ASK_TELEGRAM_ACCEPT_MESSAGE=${{ vars.ASK_TELEGRAM_ACCEPT_MESSAGE }} \
-            ${{ secrets.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"
+            ${{ vars.DOCKERHUB_HOST }}/${{ secrets.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"

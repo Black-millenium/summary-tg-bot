@@ -88,4 +88,4 @@ jobs:
             -e ASK_TELEGRAM_BOT_PATH=${{ secrets.ASK_TELEGRAM_BOT_PATH }} \
             -e ASK_TELEGRAM_SECRET_TOKEN=${{ secrets.ASK_TELEGRAM_SECRET_TOKEN }} \
             -e ASK_TELEGRAM_ACCEPT_MESSAGE=${{ vars.ASK_TELEGRAM_ACCEPT_MESSAGE }} \
-            ${{ vars.DOCKERHUB_HOST }}/${{ secrets.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"
+            ${{ vars.DOCKERHUB_HOST }}/${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"

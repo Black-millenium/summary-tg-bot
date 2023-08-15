@@ -15,9 +15,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Decode and create p12 File
-        run: echo "${{ secrets.BOT_PRIVATE_KEY_BASE64 }}" | base64 -d > cert/keystore.p12
-
       - name: Get the version from tag
         id: get_version
         run: |
@@ -36,6 +33,9 @@ jobs:
           username: ${{ vars.DOCKERHUB_LOGIN }}
           password: ${{ secrets.DOCKERHUB_PUSH_TOKEN }}
 
+      - name: Decode and create p12 File
+        run: echo "${{ secrets.BOT_PRIVATE_KEY_BASE64 }}" | base64 -d > cert/keystore.p12
+
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
@@ -45,6 +45,9 @@ jobs:
           # cache-to: type=gha,mode=min
           push: true
           tags: ${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}
+
+      - name: Delete cert directory
+        run: rm -rf cert
 
       - name: Decode and create ECDSA cert for server auth
         run: |
@@ -92,3 +95,6 @@ jobs:
           -e DIALOGUE_TELEGRAM_TOKEN='${{ secrets.DIALOGUE_TELEGRAM_TOKEN }}' \
           -e DIALOGUE_TELEGRAM_SECRET_TOKEN='${{ secrets.DIALOGUE_TELEGRAM_SECRET_TOKEN }}' \
           ${{ vars.DOCKERHUB_HOST }}/${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"
+
+      - name: Remove .ssh directory
+        run: rm -rf ~/.ssh

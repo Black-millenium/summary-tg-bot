@@ -23,7 +23,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.romaskull.summarytgbot.util.SummaryUtil.*;
+import static com.romaskull.summarytgbot.util.SummaryUtil.extractMessageCount;
+import static com.romaskull.summarytgbot.util.SummaryUtil.extractMessageText;
+import static com.romaskull.summarytgbot.util.SummaryUtil.getDisplayableName;
+import static com.romaskull.summarytgbot.util.SummaryUtil.isBotCalling;
+import static com.romaskull.summarytgbot.util.SummaryUtil.isGroupMessage;
 
 @Slf4j
 @Service
@@ -58,89 +62,70 @@ public class SummaryBot extends TelegramWebhookBot {
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
         final Message message = update.getMessage();
+        if (StringUtils.hasLength(message.getText())) {
+            Long chatId = message.getChatId();
+            String extractedMessage = extractMessageText(SUMGPTBOT, message);
 
-        if (!StringUtils.hasLength(message.getText())) {
-            return null;
-        }
-
-        Long chatId = message.getChatId();
-        String extractedMessage = extractMessageText(SUMGPTBOT, message);
-
-        if (!StringUtils.hasLength(extractedMessage)) {
-            return null;
-        }
-
-        if (isGroupMessage(message)) {
-            List<MessageEntity> entities = message.getEntities();
-            if (entities != null) {
-                handleBotCommands(message, chatId, extractedMessage);
-            } else {
-                saveChatMessage(message, chatId);
+            if (StringUtils.hasLength(extractedMessage)) {
+                if (isGroupMessage(message) && message.getEntities() != null) {
+                    processBotCallInGroupChat(chatId, message, extractedMessage);
+                    return new SendMessage(String.valueOf(chatId), summaryBotProperties.getAcceptMessage());
+                } else if (isGroupMessage(message)) {
+                    saveGroupMessage(message, chatId);
+                }
             }
         }
-
         return null;
     }
 
-    private void handleBotCommands(Message message, Long chatId, String extractedMessage) {
-        message.getEntities().stream()
-                .filter(entity -> isBotCalling(SUMGPTBOT, message, entity))
-                .forEachOrdered(entity -> processBotCommand(chatId, extractedMessage));
-    }
-
-    private void processBotCommand(Long chatId, String extractedMessage) {
-        try {
-            int messageCount = extractMessageCount(extractedMessage);
-
-            validateMessageCount(chatId, messageCount);
-
-            StopWatch stopWatch = new StopWatch("mongo-select");
-            stopWatch.start();
-            List<ChatMessage> msgs = historyRepository.findByChatId(chatId, PageRequest.of(0, messageCount));
-            stopWatch.stop();
-
-            log.info("Time for select {} messages from Mongo: {} ms", messageCount, stopWatch.getLastTaskTimeMillis());
-
-            CompletableFuture<String> summaryResult = chatGptService.requestGptSummarization(msgs);
-            handleSummarizationResponse(chatId, summaryResult);
-
-        } catch (NumberFormatException e) {
-            sendMessage(chatId, "Не понимаю чё такое. Пойму только число.");
-        } catch (RuntimeException e) {
-            log.error("{}", e.getMessage(), e);
-            sendMessage(chatId, "Что-то где-то поломалось");
+    private void processBotCallInGroupChat(Long chatId, Message message, String extractedMessage) {
+        for (MessageEntity entity : message.getEntities()) {
+            if (isBotCalling(SUMGPTBOT, message, entity)) {
+                try {
+                    handleBotCall(chatId, extractedMessage);
+                } catch (RuntimeException e) {
+                    logErrorAndSendMessage(chatId, e, "Что-то где-то поломалось");
+                }
+            }
         }
     }
 
-    private void validateMessageCount(Long chatId, int messageCount) throws NumberFormatException {
-        if (messageCount > gptProperties.getMaxHistory() || messageCount < 1) {
-            sendMessage(chatId, "Не понимаю чё такое. "
-                    + "Пойму только число в диапазоне: [1; " + gptProperties.getMaxHistory() + "]");
-            throw new NumberFormatException();
-        }
-    }
+    private void handleBotCall(Long chatId, String extractedMessage) throws NumberFormatException {
+        int messageCount = extractMessageCount(extractedMessage);
+        validateMessageCount(chatId, messageCount);
 
-    private void handleSummarizationResponse(Long chatId, CompletableFuture<String> summaryResult) {
+        StopWatch stopWatch = new StopWatch("mongo-select");
+        stopWatch.start();
+        List<ChatMessage> msgs = historyRepository.findByChatId(chatId, PageRequest.of(0, messageCount));
+        stopWatch.stop();
+        log.info("Time for select {} messages from Mongo: {} ms", messageCount, stopWatch.getLastTaskTimeMillis());
+
+        CompletableFuture<String> summaryResult = chatGptService.requestGptSummarization(msgs);
         summaryResult.thenAccept(s -> {
             try {
                 sendMessage(chatId, s);
             } catch (Exception e) {
-                log.error("{}", e.getMessage(), e);
-                sendMessage(chatId, "Что-то поломалось в процессе ожидания ответа");
+                logErrorAndSendMessage(chatId, e, "Что-то поломалось в процессе ожидания ответа");
             }
         });
     }
 
-    private void saveChatMessage(Message message, Long chatId) {
-        final ChatMessage chatMessage = new ChatMessage();
+    private void validateMessageCount(Long chatId, int messageCount) {
+        if (messageCount > gptProperties.getMaxHistory() || messageCount < 1) {
+            sendMessage(chatId, "Не понимаю чё такое. Пойму только число в диапазоне: [1; %d]"
+                    .formatted(gptProperties.getMaxHistory()));
+            throw new NumberFormatException();
+        }
+    }
 
+    private void saveGroupMessage(Message message, Long chatId) {
+        final ChatMessage chatMessage = new ChatMessage();
         chatMessage.setChatId(chatId);
         chatMessage.setMessageId(Long.valueOf(message.getMessageId()));
         chatMessage.setMessage(message.getText());
         chatMessage.setSenderName(getDisplayableName(message.getFrom()));
         chatMessage.setSenderId(message.getFrom().getId());
         chatMessage.setCreatedAt(LocalDateTime.now());
-
         historyRepository.save(chatMessage);
     }
 
@@ -153,6 +138,11 @@ public class SummaryBot extends TelegramWebhookBot {
         } catch (TelegramApiException e) {
             log.error(e.getMessage(), e);
         }
+    }
+
+    private void logErrorAndSendMessage(Long chatId, Exception e, String defaultMessage) {
+        log.error("{}", e.getMessage(), e);
+        sendMessage(chatId, defaultMessage);
     }
 
     @Override

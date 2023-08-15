@@ -41,9 +41,8 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          scope: master-dependencies
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=min
           push: true
           tags: ${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}
 

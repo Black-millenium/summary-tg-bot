@@ -68,26 +68,22 @@ public class SummaryBot extends TelegramWebhookBot {
 
             if (StringUtils.hasLength(extractedMessage)) {
                 if (isGroupMessage(message) && message.getEntities() != null) {
-                    processBotCallInGroupChat(chatId, message, extractedMessage);
-                    return new SendMessage(String.valueOf(chatId), summaryBotProperties.getAcceptMessage());
+                    for (MessageEntity entity : message.getEntities()) {
+                        if (isBotCalling(SUMGPTBOT, message, entity)) {
+                            try {
+                                handleBotCall(chatId, extractedMessage);
+                                return new SendMessage(String.valueOf(chatId), summaryBotProperties.getAcceptMessage());
+                            } catch (RuntimeException e) {
+                                logErrorAndSendMessage(chatId, e, "Что-то где-то поломалось");
+                            }
+                        }
+                    }
                 } else if (isGroupMessage(message)) {
                     saveGroupMessage(message, chatId);
                 }
             }
         }
         return null;
-    }
-
-    private void processBotCallInGroupChat(Long chatId, Message message, String extractedMessage) {
-        for (MessageEntity entity : message.getEntities()) {
-            if (isBotCalling(SUMGPTBOT, message, entity)) {
-                try {
-                    handleBotCall(chatId, extractedMessage);
-                } catch (RuntimeException e) {
-                    logErrorAndSendMessage(chatId, e, "Что-то где-то поломалось");
-                }
-            }
-        }
     }
 
     private void handleBotCall(Long chatId, String extractedMessage) throws NumberFormatException {

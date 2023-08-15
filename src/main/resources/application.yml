@@ -31,6 +31,7 @@ app:
     max-batch-size: ${GPT_MAX_BATCH_SIZE}
     max-history: ${GPT_MAX_HISTORY}
     system-instruction: ${GPT_SYSTEM_INSTRUCTION}
+    summarization-instruction: ${GPT_SUMMARIZATION_INSTRUCTION}
 
   summary-bot:
     username: ${TELEGRAM_USERNAME}

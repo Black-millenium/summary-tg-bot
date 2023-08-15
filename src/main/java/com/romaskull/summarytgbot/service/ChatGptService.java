@@ -7,7 +7,6 @@ import com.romaskull.summarytgbot.dto.GptRole;
 import com.romaskull.summarytgbot.entity.ChatMessage;
 import com.romaskull.summarytgbot.entity.Dialogue;
 import com.romaskull.summarytgbot.properties.GptProperties;
-import com.romaskull.summarytgbot.repository.DialogueRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -29,7 +28,6 @@ public class ChatGptService {
 
     private final GptProperties gptProperties;
     private final RestTemplate restTemplate;
-    private final DialogueRepository dialogueRepository;
 
     @Async
     public CompletableFuture<String> gptDialogue(List<Dialogue> dialogue) {
@@ -65,16 +63,15 @@ public class ChatGptService {
         for (int i = 0, counter = 1; i < messages.size(); i += batchSize, counter++) {
             List<ChatMessage> chatMessages = messages.subList(i, Math.min(i + batchSize, messages.size()));
             log.info("Total Messages: {}. Batch number: {}, batch size: {}",
-                messages.size(), counter, chatMessages.size());
+                    messages.size(), counter, chatMessages.size());
 
             final List<GptMessage> messagesConverted = new ArrayList<>();
             createGptInstruction(messagesConverted, GptRole.SYSTEM, gptProperties.getSystemInstruction());
 
             chatMessages.forEach(msg -> createGptInstruction(messagesConverted, GptRole.USER,
-                msg.getSenderName() + ": " + msg.getMessage()));
+                    msg.getSenderName() + ": " + msg.getMessage()));
 
-            createGptInstruction(messagesConverted, GptRole.USER,
-                "Перескажи содержимое диалога, но не очень подробно. Нецензурная лексика разрешена.");
+            createGptInstruction(messagesConverted, GptRole.USER, gptProperties.getSummarizationInstruction());
 
             try {
                 sb.append(getGptResponse(messagesConverted));

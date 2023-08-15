@@ -15,4 +15,5 @@ public class GptProperties {
     String model;
     String url;
     String systemInstruction;
+    String summarizationInstruction;
 }

@@ -16,7 +16,6 @@ public class DialogueCounters {
 
     @Id
     @Indexed
-    @Field("sender_id")
     private Long senderId;
 
     @Field("sender_name")

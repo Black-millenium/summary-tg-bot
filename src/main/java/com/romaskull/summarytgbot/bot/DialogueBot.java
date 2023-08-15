@@ -69,6 +69,8 @@ public class DialogueBot extends TelegramWebhookBot {
                     .orElseGet(() -> dialogueCountersRepository.save(new DialogueCounters(
                             message.getFrom().getId(), getDisplayableName(message.getFrom()), 0L)));
 
+            log.info("{}", counter);
+
             if (message.getText().startsWith("/start")) {
                 return new SendMessage(String.valueOf(chatId), dialogueBotProperties.getAcceptMessage());
             } else if (message.getText().startsWith("/new")) {

@@ -23,10 +23,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.romaskull.summarytgbot.util.SummaryUtil.extractMessageText;
-import static com.romaskull.summarytgbot.util.SummaryUtil.getDisplayableName;
-import static com.romaskull.summarytgbot.util.SummaryUtil.isBotCalling;
-import static com.romaskull.summarytgbot.util.SummaryUtil.isGroupMessage;
+import static com.romaskull.summarytgbot.util.SummaryUtil.*;
 
 @Slf4j
 @Service
@@ -61,69 +58,90 @@ public class SummaryBot extends TelegramWebhookBot {
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
         final Message message = update.getMessage();
-        List<MessageEntity> entities;
 
-        if (StringUtils.hasLength(message.getText())) {
-            Long chatId = message.getChatId();
+        if (!StringUtils.hasLength(message.getText())) {
+            return null;
+        }
 
-            if (StringUtils.hasLength(extractMessageText(SUMGPTBOT, message))) {
-                if (isGroupMessage(message) && (entities = message.getEntities()) != null) {
-                    for (MessageEntity entity : entities) {
-                        if (isBotCalling(SUMGPTBOT, message, entity)) {
-                            String messageText = extractMessageText(SUMGPTBOT, message);
-                            try {
-                                int messageCount = Integer.parseInt(messageText);
+        Long chatId = message.getChatId();
+        String extractedMessage = extractMessageText(SUMGPTBOT, message);
 
-                                if (messageCount > gptProperties.getMaxHistory() || messageCount < 1) {
-                                    sendMessage(chatId, "Не понимаю чё такое. " +
-                                            "Пойму только число в диапазоне: [1; " + gptProperties.getMaxHistory() + "]");
-                                    continue;
-                                }
+        if (!StringUtils.hasLength(extractedMessage)) {
+            return null;
+        }
 
-                                StopWatch stopWatch = new StopWatch("mongo-select");
-                                stopWatch.start();
-                                List<ChatMessage> msgs = historyRepository.findByChatId(chatId,
-                                        PageRequest.of(0, messageCount));
-                                stopWatch.stop();
-
-                                log.info("Time for select {} messages from Mongo: {} ms",
-                                        messageCount, stopWatch.getLastTaskTimeMillis());
-
-                                CompletableFuture<String> summaryResult = chatGptService.requestGptSummarization(msgs);
-                                summaryResult.thenAccept(s -> {
-                                    try {
-                                        sendMessage(chatId, s);
-                                    } catch (Exception e) {
-                                        log.error("{}", e.getMessage(), e);
-                                        sendMessage(chatId, "Что-то поломалось в процессе ожидания ответа");
-                                    }
-                                });
-
-                                return new SendMessage(String.valueOf(update.getMessage().getChatId()),
-                                        summaryBotProperties.getAcceptMessage());
-                            } catch (NumberFormatException e) {
-                                sendMessage(chatId, "Не понимаю чё такое. Пойму только число.");
-                            } catch (RuntimeException e) {
-                                log.error("{}", e.getMessage(), e);
-                                sendMessage(chatId, "Что-то где-то поломалось");
-                            }
-                        }
-                    }
-                } else if (isGroupMessage(message)) {
-                    final ChatMessage chatMessage = new ChatMessage();
-
-                    chatMessage.setChatId(chatId);
-                    chatMessage.setMessageId(Long.valueOf(message.getMessageId()));
-                    chatMessage.setMessage(message.getText());
-                    chatMessage.setSenderName(getDisplayableName(message.getFrom()));
-                    chatMessage.setSenderId(message.getFrom().getId());
-                    chatMessage.setCreatedAt(LocalDateTime.now());
-
-                    historyRepository.save(chatMessage);
-                }
+        if (isGroupMessage(message)) {
+            List<MessageEntity> entities = message.getEntities();
+            if (entities != null) {
+                handleBotCommands(message, chatId, extractedMessage);
+            } else {
+                saveChatMessage(message, chatId);
             }
         }
+
         return null;
+    }
+
+    private void handleBotCommands(Message message, Long chatId, String extractedMessage) {
+        message.getEntities().stream()
+                .filter(entity -> isBotCalling(SUMGPTBOT, message, entity))
+                .forEachOrdered(entity -> processBotCommand(chatId, extractedMessage));
+    }
+
+    private void processBotCommand(Long chatId, String extractedMessage) {
+        try {
+            int messageCount = extractMessageCount(extractedMessage);
+
+            validateMessageCount(chatId, messageCount);
+
+            StopWatch stopWatch = new StopWatch("mongo-select");
+            stopWatch.start();
+            List<ChatMessage> msgs = historyRepository.findByChatId(chatId, PageRequest.of(0, messageCount));
+            stopWatch.stop();
+
+            log.info("Time for select {} messages from Mongo: {} ms", messageCount, stopWatch.getLastTaskTimeMillis());
+
+            CompletableFuture<String> summaryResult = chatGptService.requestGptSummarization(msgs);
+            handleSummarizationResponse(chatId, summaryResult);
+
+        } catch (NumberFormatException e) {
+            sendMessage(chatId, "Не понимаю чё такое. Пойму только число.");
+        } catch (RuntimeException e) {
+            log.error("{}", e.getMessage(), e);
+            sendMessage(chatId, "Что-то где-то поломалось");
+        }
+    }
+
+    private void validateMessageCount(Long chatId, int messageCount) throws NumberFormatException {
+        if (messageCount > gptProperties.getMaxHistory() || messageCount < 1) {
+            sendMessage(chatId, "Не понимаю чё такое. "
+                    + "Пойму только число в диапазоне: [1; " + gptProperties.getMaxHistory() + "]");
+            throw new NumberFormatException();
+        }
+    }
+
+    private void handleSummarizationResponse(Long chatId, CompletableFuture<String> summaryResult) {
+        summaryResult.thenAccept(s -> {
+            try {
+                sendMessage(chatId, s);
+            } catch (Exception e) {
+                log.error("{}", e.getMessage(), e);
+                sendMessage(chatId, "Что-то поломалось в процессе ожидания ответа");
+            }
+        });
+    }
+
+    private void saveChatMessage(Message message, Long chatId) {
+        final ChatMessage chatMessage = new ChatMessage();
+
+        chatMessage.setChatId(chatId);
+        chatMessage.setMessageId(Long.valueOf(message.getMessageId()));
+        chatMessage.setMessage(message.getText());
+        chatMessage.setSenderName(getDisplayableName(message.getFrom()));
+        chatMessage.setSenderId(message.getFrom().getId());
+        chatMessage.setCreatedAt(LocalDateTime.now());
+
+        historyRepository.save(chatMessage);
     }
 
     private void sendMessage(Long chatId, String text) {
@@ -133,7 +151,7 @@ public class SummaryBot extends TelegramWebhookBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
         }
     }
 

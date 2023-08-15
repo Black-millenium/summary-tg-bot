@@ -11,4 +11,6 @@ public class SummaryBotProperties {
     String botPath;
     String secretToken;
     String acceptMessage;
+    String systemInstruction;
+    String summarizationInstruction;
 }

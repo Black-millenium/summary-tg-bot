@@ -7,6 +7,7 @@ import com.romaskull.summarytgbot.dto.GptRole;
 import com.romaskull.summarytgbot.entity.ChatMessage;
 import com.romaskull.summarytgbot.entity.Dialogue;
 import com.romaskull.summarytgbot.properties.GptProperties;
+import com.romaskull.summarytgbot.properties.SummaryBotProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -27,6 +28,7 @@ import static com.romaskull.summarytgbot.util.GptUtil.createGptInstruction;
 public class ChatGptService {
 
     private final GptProperties gptProperties;
+    private final SummaryBotProperties summaryBotProperties;
     private final RestTemplate restTemplate;
 
     @Async
@@ -66,12 +68,12 @@ public class ChatGptService {
                     messages.size(), counter, chatMessages.size());
 
             final List<GptMessage> messagesConverted = new ArrayList<>();
-            createGptInstruction(messagesConverted, GptRole.SYSTEM, gptProperties.getSystemInstruction());
+            createGptInstruction(messagesConverted, GptRole.SYSTEM, summaryBotProperties.getSystemInstruction());
 
             chatMessages.forEach(msg -> createGptInstruction(messagesConverted, GptRole.USER,
                     msg.getSenderName() + ": " + msg.getMessage()));
 
-            createGptInstruction(messagesConverted, GptRole.USER, gptProperties.getSummarizationInstruction());
+            createGptInstruction(messagesConverted, GptRole.USER, summaryBotProperties.getSummarizationInstruction());
 
             try {
                 sb.append(getGptResponse(messagesConverted));

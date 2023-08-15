@@ -68,8 +68,6 @@ jobs:
           -p '8443:8443' \
           -e GPT_TOKEN='${{ secrets.GPT_TOKEN }}' \
           -e GPT_ORGANIZATION='${{ secrets.GPT_ORGANIZATION }}' \
-          -e TELEGRAM_USERNAME='${{ vars.TELEGRAM_USERNAME }}' \
-          -e TELEGRAM_TOKEN='${{ secrets.TELEGRAM_TOKEN }}' \
           -e GPT_TEMPERATURE='${{ vars.GPT_TEMPERATURE }}' \
           -e GPT_MAX_BATCH_SIZE='${{ vars.GPT_MAX_BATCH_SIZE }}' \
           -e GPT_MAX_TOKENS='${{ vars.GPT_MAX_TOKENS }}' \
@@ -77,19 +75,21 @@ jobs:
           -e GPT_MODEL='${{ vars.GPT_MODEL }}' \
           -e MONGO_CONNECTION_STRING='${{ secrets.MONGO_CONNECTION_STRING }}' \
           -e MONGO_DATABASE_NAME='${{ vars.MONGO_DATABASE_NAME }}' \
-          -e TELEGRAM_BOT_PATH='${{ secrets.TELEGRAM_BOT_PATH }}' \
-          -e TELEGRAM_SECRET_TOKEN='${{ secrets.TELEGRAM_SECRET_TOKEN }}' \
           -e SSL_KEY_STORE_PATH='${{ vars.SSL_KEY_STORE_PATH }}' \
           -e SSL_KEY_STORE_PASSWORD='${{ secrets.SSL_KEY_STORE_PASSWORD }}' \
           -e SSL_KEY_STORE_TYPE='${{ vars.SSL_KEY_STORE_TYPE }}' \
           -e SSL_KEY_ALIAS='${{ vars.SSL_KEY_ALIAS }}' \
           -e SSL_KEY_PASSWORD='${{ secrets.SSL_KEY_PASSWORD }}' \
-          -e GPT_SYSTEM_INSTRUCTION='${{ vars.GPT_SYSTEM_INSTRUCTION }}' \
-          -e GPT_SUMMARIZATION_INSTRUCTION='${{ vars.GPT_SUMMARIZATION_INSTRUCTION }}' \
-          -e TELEGRAM_ACCEPT_MESSAGE='${{ vars.TELEGRAM_ACCEPT_MESSAGE }}' \
+          -e SUMMARY_BOT_PATH='${{ secrets.SUMMARY_BOT_PATH }}' \
+          -e SUMMARY_TOKEN='${{ secrets.SUMMARY_TOKEN }}' \
+          -e SUMMARY_SECRET_TOKEN='${{ secrets.SUMMARY_SECRET_TOKEN }}' \
+          -e SUMMARY_USERNAME='${{ vars.SUMMARY_USERNAME }}' \
+          -e SUMMARY_SYSTEM_INSTRUCTION='${{ vars.SUMMARY_SYSTEM_INSTRUCTION }}' \
+          -e SUMMARY_SUMMARIZATION_INSTRUCTION='${{ vars.SUMMARY_SUMMARIZATION_INSTRUCTION }}' \
+          -e SUMMARY_ACCEPT_MESSAGE='${{ vars.SUMMARY_ACCEPT_MESSAGE }}' \
           -e DIALOGUE_TELEGRAM_USERNAME='${{ vars.DIALOGUE_TELEGRAM_USERNAME }}' \
-          -e DIALOGUE_TELEGRAM_TOKEN='${{ secrets.DIALOGUE_TELEGRAM_TOKEN }}' \
-          -e DIALOGUE_TELEGRAM_BOT_PATH='${{ secrets.DIALOGUE_TELEGRAM_BOT_PATH }}' \
-          -e DIALOGUE_TELEGRAM_SECRET_TOKEN='${{ secrets.DIALOGUE_TELEGRAM_SECRET_TOKEN }}' \
           -e DIALOGUE_TELEGRAM_ACCEPT_MESSAGE='${{ vars.DIALOGUE_TELEGRAM_ACCEPT_MESSAGE }}' \
+          -e DIALOGUE_TELEGRAM_BOT_PATH='${{ secrets.DIALOGUE_TELEGRAM_BOT_PATH }}' \
+          -e DIALOGUE_TELEGRAM_TOKEN='${{ secrets.DIALOGUE_TELEGRAM_TOKEN }}' \
+          -e DIALOGUE_TELEGRAM_SECRET_TOKEN='${{ secrets.DIALOGUE_TELEGRAM_SECRET_TOKEN }}' \
           ${{ vars.DOCKERHUB_HOST }}/${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"

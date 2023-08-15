@@ -30,15 +30,15 @@ app:
     url: https://api.openai.com/v1/chat/completions
     max-batch-size: ${GPT_MAX_BATCH_SIZE}
     max-history: ${GPT_MAX_HISTORY}
-    system-instruction: ${GPT_SYSTEM_INSTRUCTION}
-    summarization-instruction: ${GPT_SUMMARIZATION_INSTRUCTION}
 
   summary-bot:
-    username: ${TELEGRAM_USERNAME}
-    token: ${TELEGRAM_TOKEN}
-    bot-path: ${TELEGRAM_BOT_PATH}
-    secret-token: ${TELEGRAM_SECRET_TOKEN}
-    accept-message: ${TELEGRAM_ACCEPT_MESSAGE}
+    username: ${SUMMARY_USERNAME}
+    token: ${SUMMARY_TOKEN}
+    bot-path: ${SUMMARY_BOT_PATH}
+    secret-token: ${SUMMARY_SECRET_TOKEN}
+    accept-message: ${SUMMARY_ACCEPT_MESSAGE}
+    system-instruction: ${SUMMARY_SYSTEM_INSTRUCTION}
+    summarization-instruction: ${SUMMARY_SUMMARIZATION_INSTRUCTION}
 
   dialogue-bot:
     username: ${DIALOGUE_TELEGRAM_USERNAME}

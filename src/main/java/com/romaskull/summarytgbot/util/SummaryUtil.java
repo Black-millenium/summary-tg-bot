@@ -9,6 +9,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @UtilityClass
 public class SummaryUtil {
@@ -18,9 +19,19 @@ public class SummaryUtil {
     }
 
     public static String extractMessageText(String botName, Message message) {
-        return message.getText().strip()
-                .replace(botName, "").strip();
+        return message.getText().strip().replace(botName, "").strip();
     }
+
+    public static Integer extractMessageCount(String message) {
+        String numberStr = message.chars()
+                .mapToObj(c -> (char) c)
+                .takeWhile(Character::isDigit)
+                .map(String::valueOf)
+                .collect(Collectors.joining());
+
+        return numberStr.isEmpty() ? 0 : Integer.parseInt(numberStr);
+    }
+
 
     public static boolean isBotCalling(String botName, Message message, MessageEntity entity) {
         return EntityType.MENTION.equals(entity.getType())

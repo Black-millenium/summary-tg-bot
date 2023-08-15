@@ -14,6 +14,4 @@ public class GptProperties {
     int maxTokens;
     String model;
     String url;
-    String systemInstruction;
-    String summarizationInstruction;
 }

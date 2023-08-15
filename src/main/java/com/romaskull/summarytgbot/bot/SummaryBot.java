@@ -112,8 +112,7 @@ public class SummaryBot extends TelegramWebhookBot {
     private void validateMessageCount(int messageCount) {
         if (messageCount > gptProperties.getMaxHistory() || messageCount < 1) {
             throw new NumberFormatException(
-                    "Не понимаю чё такое. Пойму только число в диапазоне: [1; %d]"
-                            .formatted(gptProperties.getMaxHistory()));
+                    "Падажжи, не мороси. Давай по-нормальному, от 1 до %d.".formatted(gptProperties.getMaxHistory()));
         }
     }
 

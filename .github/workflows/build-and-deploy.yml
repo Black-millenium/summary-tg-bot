@@ -41,9 +41,9 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          # Отключил кеш пока не разберусь, как он работает
-          # cache-from: type=gha
-          # cache-to: type=gha,mode=max
+          scope: master-dependencies
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           push: true
           tags: ${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}
 

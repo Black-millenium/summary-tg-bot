@@ -50,4 +50,4 @@ app:
 
 logging:
   level:
-    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+    org.springframework.data.mongodb.core.MongoTemplate: INFO

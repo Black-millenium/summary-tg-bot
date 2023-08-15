@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static com.romaskull.summarytgbot.util.GptUtil.createChatGptRequest;
 import static com.romaskull.summarytgbot.util.GptUtil.createGptInstruction;
@@ -62,8 +63,10 @@ public class ChatGptService {
 
         for (int i = 0, counter = 1; i < messages.size(); i += batchSize, counter++) {
             List<ChatMessage> chatMessages = messages.subList(i, Math.min(i + batchSize, messages.size()));
-            log.info("Total Messages: {}. Batch number: {}, batch size: {}",
-                    messages.size(), counter, chatMessages.size());
+            log.info("Total Messages: {}. Batch number: {}, batch size: {}, batch content: {}",
+                    messages.size(), counter, chatMessages.size(),
+                    chatMessages.stream().map(chatMessage -> "\t" + chatMessage.toString())
+                            .collect(Collectors.joining(",\n", "[\n", "\n]")));
 
             final List<GptMessage> messagesConverted = new ArrayList<>();
             createGptInstruction(messagesConverted, GptRole.SYSTEM, summaryBotProperties.getSystemInstruction());

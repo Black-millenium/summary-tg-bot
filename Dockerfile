@@ -1,11 +1,11 @@
-FROM maven:3.9.3-eclipse-temurin-17-focal AS build
+FROM maven:3.9.3-eclipse-temurin-17-alpine AS build
 WORKDIR /workspace
 COPY pom.xml .
 COPY src ./src
 COPY cert/keystore.p12 ./cert/keystore.p12
 RUN mvn clean package
 
-FROM openjdk:17-alpine
+FROM eclipse-temurin:17-jre-alpine
 RUN apk update && apk upgrade --available && sync
 WORKDIR /app
 COPY --from=build /workspace/target/summary-tg-bot-*.jar ./app.jar

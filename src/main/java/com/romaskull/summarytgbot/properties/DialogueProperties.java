@@ -11,4 +11,5 @@ public class DialogueProperties {
     String botPath;
     String secretToken;
     String acceptMessage;
+    String systemInstruction;
 }

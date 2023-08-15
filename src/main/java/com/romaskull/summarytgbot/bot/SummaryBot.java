@@ -20,7 +20,9 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static com.romaskull.summarytgbot.util.SummaryUtil.extractMessageCount;
@@ -66,19 +68,18 @@ public class SummaryBot extends TelegramWebhookBot {
             Long chatId = message.getChatId();
             String extractedMessage = extractMessageText(SUMGPTBOT, message);
 
-            if (StringUtils.hasLength(extractedMessage)) {
-                if (isGroupMessage(message) && message.getEntities() != null) {
-                    for (MessageEntity entity : message.getEntities()) {
-                        if (isBotCalling(SUMGPTBOT, message, entity)) {
-                            try {
-                                handleBotCall(chatId, extractedMessage);
-                                return new SendMessage(String.valueOf(chatId), summaryBotProperties.getAcceptMessage());
-                            } catch (RuntimeException e) {
-                                logErrorAndSendMessage(chatId, e, "Что-то где-то поломалось");
-                            }
-                        }
+            if (StringUtils.hasLength(extractedMessage) && isGroupMessage(message)) {
+                List<MessageEntity> entities = Optional.ofNullable(message.getEntities()).orElse(Collections.emptyList());
+                boolean isBotMentioned = entities.stream().anyMatch(entity -> isBotCalling(SUMGPTBOT, message, entity));
+
+                if (isBotMentioned) {
+                    try {
+                        handleBotCall(chatId, extractedMessage);
+                        return new SendMessage(String.valueOf(chatId), summaryBotProperties.getAcceptMessage());
+                    } catch (RuntimeException e) {
+                        logErrorAndSendMessage(chatId, e, "Что-то где-то поломалось");
                     }
-                } else if (isGroupMessage(message)) {
+                } else {
                     saveGroupMessage(message, chatId);
                 }
             }

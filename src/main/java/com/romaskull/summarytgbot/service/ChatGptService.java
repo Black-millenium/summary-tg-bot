@@ -38,9 +38,7 @@ public class ChatGptService {
 
         dialogue.sort(Comparator.comparing(Dialogue::getCreatedAt));
 
-        createGptInstruction(dialogueHistory,
-                GptRole.SYSTEM,
-                "Ты ведешь диалог как обычный собеседник. Разговаривай на ты. Не упоминай, что ты ИИ.");
+        createGptInstruction(dialogueHistory, GptRole.SYSTEM, summaryBotProperties.getSystemInstruction());
 
         dialogue.forEach(message -> createGptInstruction(dialogueHistory, message.getGptRole(), message.getMessage()));
 

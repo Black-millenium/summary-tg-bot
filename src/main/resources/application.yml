@@ -46,6 +46,7 @@ app:
     bot-path: ${DIALOGUE_TELEGRAM_BOT_PATH}
     secret-token: ${DIALOGUE_TELEGRAM_SECRET_TOKEN}
     accept-message: ${DIALOGUE_TELEGRAM_ACCEPT_MESSAGE}
+    system-instruction: ${DIALOGUE_SYSTEM_INSTRUCTION}
 
 logging:
   level:

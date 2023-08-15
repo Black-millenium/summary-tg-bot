@@ -76,6 +76,8 @@ public class SummaryBot extends TelegramWebhookBot {
                     try {
                         handleBotCall(chatId, extractedMessage);
                         return new SendMessage(String.valueOf(chatId), summaryBotProperties.getAcceptMessage());
+                    } catch (NumberFormatException e) {
+                        return new SendMessage(String.valueOf(chatId), e.getMessage());
                     } catch (RuntimeException e) {
                         logErrorAndSendMessage(chatId, e, "Что-то где-то поломалось");
                     }
@@ -89,7 +91,7 @@ public class SummaryBot extends TelegramWebhookBot {
 
     private void handleBotCall(Long chatId, String extractedMessage) throws NumberFormatException {
         int messageCount = extractMessageCount(extractedMessage);
-        validateMessageCount(chatId, messageCount);
+        validateMessageCount(messageCount);
 
         StopWatch stopWatch = new StopWatch("mongo-select");
         stopWatch.start();
@@ -107,11 +109,11 @@ public class SummaryBot extends TelegramWebhookBot {
         });
     }
 
-    private void validateMessageCount(Long chatId, int messageCount) {
+    private void validateMessageCount(int messageCount) {
         if (messageCount > gptProperties.getMaxHistory() || messageCount < 1) {
-            sendMessage(chatId, "Не понимаю чё такое. Пойму только число в диапазоне: [1; %d]"
-                    .formatted(gptProperties.getMaxHistory()));
-            throw new NumberFormatException();
+            throw new NumberFormatException(
+                    "Не понимаю чё такое. Пойму только число в диапазоне: [1; %d]"
+                            .formatted(gptProperties.getMaxHistory()));
         }
     }
 

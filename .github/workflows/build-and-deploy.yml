@@ -9,7 +9,7 @@ on:
 jobs:
 
   build:
-    if: github.event.ref_type == 'tag'
+    # if: github.event.ref_type == 'tag'
     runs-on: ubuntu-22.04
 
     steps:
@@ -89,4 +89,3 @@ jobs:
           -e ASK_TELEGRAM_SECRET_TOKEN='${{ secrets.ASK_TELEGRAM_SECRET_TOKEN }}' \
           -e ASK_TELEGRAM_ACCEPT_MESSAGE='${{ vars.ASK_TELEGRAM_ACCEPT_MESSAGE }}' \
           ${{ vars.DOCKERHUB_HOST }}/${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"
-

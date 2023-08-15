@@ -9,7 +9,6 @@ on:
 jobs:
 
   build:
-    # if: github.event.ref_type == 'tag'
     runs-on: ubuntu-22.04
 
     steps:
@@ -88,9 +87,9 @@ jobs:
           -e GPT_SYSTEM_INSTRUCTION='${{ vars.GPT_SYSTEM_INSTRUCTION }}' \
           -e GPT_ASSISTANT_INSTRUCTION='${{ vars.GPT_ASSISTANT_INSTRUCTION }}' \
           -e TELEGRAM_ACCEPT_MESSAGE='${{ vars.TELEGRAM_ACCEPT_MESSAGE }}' \
-          -e ASK_TELEGRAM_USERNAME='${{ vars.ASK_TELEGRAM_USERNAME }}' \
-          -e ASK_TELEGRAM_TOKEN='${{ secrets.ASK_TELEGRAM_TOKEN }}' \
-          -e ASK_TELEGRAM_BOT_PATH='${{ secrets.ASK_TELEGRAM_BOT_PATH }}' \
-          -e ASK_TELEGRAM_SECRET_TOKEN='${{ secrets.ASK_TELEGRAM_SECRET_TOKEN }}' \
-          -e ASK_TELEGRAM_ACCEPT_MESSAGE='${{ vars.ASK_TELEGRAM_ACCEPT_MESSAGE }}' \
+          -e DIALOGUE_TELEGRAM_USERNAME='${{ vars.DIALOGUE_TELEGRAM_USERNAME }}' \
+          -e DIALOGUE_TELEGRAM_TOKEN='${{ secrets.DIALOGUE_TELEGRAM_TOKEN }}' \
+          -e DIALOGUE_TELEGRAM_BOT_PATH='${{ secrets.DIALOGUE_TELEGRAM_BOT_PATH }}' \
+          -e DIALOGUE_TELEGRAM_SECRET_TOKEN='${{ secrets.DIALOGUE_TELEGRAM_SECRET_TOKEN }}' \
+          -e DIALOGUE_TELEGRAM_ACCEPT_MESSAGE='${{ vars.DIALOGUE_TELEGRAM_ACCEPT_MESSAGE }}' \
           ${{ vars.DOCKERHUB_HOST }}/${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}"

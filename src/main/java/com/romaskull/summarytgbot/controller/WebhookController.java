@@ -32,8 +32,6 @@ public class WebhookController {
                                   @RequestHeader("X-Telegram-Bot-Api-Secret-Token") String authSecret,
                                   HttpServletResponse httpServletResponse) {
 
-        log.info("X-Telegram-Bot-Api-Secret-Token: {}", authSecret);
-
         if (summaryBotProperties.getSecretToken().equals(authSecret)
                 || dialogueProperties.getSecretToken().equals(authSecret)) {
             return webhook.updateReceived(botPath, update);

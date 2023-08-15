@@ -43,9 +43,9 @@ jobs:
           file: Dockerfile
           scope: master-dependencies
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
           push: true
-          tags: ${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:${{ env.VERSION }}
+          tags: ${{ vars.DOCKERHUB_LOGIN }}/summary-tg-bot:latest
 
       - name: Decode and create ECDSA cert for server auth
         run: |

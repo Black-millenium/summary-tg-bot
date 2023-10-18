@@ -1,9 +1,7 @@
 package com.romaskull.summarytgbot.dto;
 
 import com.fasterxml.jackson.annotation.JsonValue;
-import lombok.ToString;
 
-@ToString
 public enum GptRole {
     SYSTEM("system"),
     USER("user"),
@@ -18,5 +16,9 @@ public enum GptRole {
 
     GptRole(String roleName) {
         this.roleName = roleName;
+    }
+
+    public String toString() {
+        return "GptRole(roleName=" + this.getRoleName() + ")";
     }
 }

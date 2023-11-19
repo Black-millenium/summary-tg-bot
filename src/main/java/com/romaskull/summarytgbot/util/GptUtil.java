@@ -4,12 +4,14 @@ import com.romaskull.summarytgbot.dto.ChatGptRequest;
 import com.romaskull.summarytgbot.dto.GptMessage;
 import com.romaskull.summarytgbot.dto.GptRole;
 import com.romaskull.summarytgbot.properties.GptProperties;
-import lombok.experimental.UtilityClass;
 
 import java.util.List;
 
-@UtilityClass
-public class GptUtil {
+public final class GptUtil {
+
+    private GptUtil() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
 
     public static ChatGptRequest createChatGptRequest(List<GptMessage> messages, GptProperties gptProperties) {
         return new ChatGptRequest(gptProperties.getModel(),

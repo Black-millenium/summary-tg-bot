@@ -6,10 +6,10 @@ import com.romaskull.summarytgbot.dto.GptMessage;
 import com.romaskull.summarytgbot.dto.GptRole;
 import com.romaskull.summarytgbot.entity.ChatMessage;
 import com.romaskull.summarytgbot.entity.Dialogue;
+import com.romaskull.summarytgbot.properties.DialogueProperties;
 import com.romaskull.summarytgbot.properties.GptProperties;
 import com.romaskull.summarytgbot.properties.SummaryBotProperties;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -23,14 +23,28 @@ import java.util.stream.Collectors;
 import static com.romaskull.summarytgbot.util.GptUtil.createChatGptRequest;
 import static com.romaskull.summarytgbot.util.GptUtil.createGptInstruction;
 
-@Slf4j
-@RequiredArgsConstructor
 @Service
 public class ChatGptService {
 
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(ChatGptService.class);
+
     private final GptProperties gptProperties;
+
     private final SummaryBotProperties summaryBotProperties;
+
+    private final DialogueProperties dialogueProperties;
+
     private final RestTemplate restTemplate;
+
+    public ChatGptService(GptProperties gptProperties,
+                          SummaryBotProperties summaryBotProperties,
+                          DialogueProperties dialogueProperties,
+                          RestTemplate restTemplate) {
+        this.gptProperties = gptProperties;
+        this.summaryBotProperties = summaryBotProperties;
+        this.dialogueProperties = dialogueProperties;
+        this.restTemplate = restTemplate;
+    }
 
     @Async
     public CompletableFuture<String> gptDialogue(List<Dialogue> dialogue) {
@@ -39,7 +53,7 @@ public class ChatGptService {
 
         dialogue.sort(Comparator.comparing(Dialogue::getCreatedAt));
 
-        createGptInstruction(dialogueHistory, GptRole.SYSTEM, summaryBotProperties.getSystemInstruction());
+        createGptInstruction(dialogueHistory, GptRole.SYSTEM, dialogueProperties.getSystemInstruction());
 
         dialogue.forEach(message -> createGptInstruction(dialogueHistory, message.getGptRole(), message.getMessage()));
 

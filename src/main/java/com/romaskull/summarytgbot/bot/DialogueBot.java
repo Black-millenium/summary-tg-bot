@@ -10,7 +10,7 @@ import com.romaskull.summarytgbot.repository.DialogueCountersRepository;
 import com.romaskull.summarytgbot.repository.DialogueRepository;
 import com.romaskull.summarytgbot.service.ChatGptService;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramWebhookBot;
@@ -26,17 +26,21 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.romaskull.summarytgbot.util.SummaryUtil.getDisplayableName;
 
-@Slf4j
 @Service
 public class DialogueBot extends TelegramWebhookBot {
 
-    private static final String ASKER = "@gpt_asker_bot";
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(DialogueBot.class);
 
     private final ChatGptService chatGptService;
+
     private final DialogueProperties dialogueBotProperties;
+
     private final ObjectMapper mapper;
+
     private final DialogueRepository dialogueRepository;
+
     private final DialogueCountersRepository dialogueCountersRepository;
+
     private final GptProperties gptProperties;
 
     public DialogueBot(ChatGptService chatGptService,
